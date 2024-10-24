@@ -264,22 +264,27 @@ def get_imgs_and_extract_features_wrapper(args):
     img, feature, img_path = get_imgs_and_extract_features(**args)
     return img, feature, img_path
      
-def extract_object_features_per_image(img_paths, coco_annotation_filepath)->Tuple[List, List]:
+def extract_object_features_per_image(coco_annotation_filepath, img_dir):#->Tuple[List, List]:
     coco = COCO(coco_annotation_filepath)
-    obj_featlist = []
-    imgname_list = []
-    for img in img_paths:
+    img_names = [obj["file_name"] for obj in coco.imgs.values()]
+    #obj_featlist = []
+    #imgname_list = []
+    img_feature = {}
+    for img in img_names:
         imgname = os.path.basename(img)
-        objects = get_objects(imgname=imgname, coco=coco, img_dir=img_dirs)
+        objects = get_objects(imgname=imgname, coco=coco, img_dir=img_dir)
         features = get_object_features(obj_imgs=objects, seed=2024, img_resize_width=224,
                                         img_resize_height=224,
                                         model_family="efficientnet",
                                         model_name="EfficientNetB0",
                                         img_normalization_weight="imagenet",
                                         )
-        obj_featlist.append(features)
-        imgname_list.append(imgname)
-    return imgname_list, obj_featlist
+        #obj_featlist.append(features)
+        #imgname_list.append(imgname)
+        img_feature[imgname] = features
+    return img_feature #imgname_list, obj_featlist
+
+
 
 def get_imgs_and_extract_features_multiprocess(img_path, img_resize_width,
                                                img_resize_height,
@@ -363,6 +368,9 @@ def img_feature_extraction_implementor(img_property_set,
             feature_list.append(feature)
         img_property_set.imgs = img_list
         img_property_set.features = feature_list
+        return img_property_set
+        
+        
         
         args = [{"img_path": img_path, "img_resize_width": img_resize_width,
                  "img_resize_height": img_resize_height, "model_family": model_family,

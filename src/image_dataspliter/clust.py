@@ -10,6 +10,7 @@ from clusteval import clusteval
 import pandas as pd
 import json
 from feat import get_object_features
+from feat import extract_object_features_per_image
 
 def get_objects(imgname, coco, img_dir):
     try:
@@ -138,6 +139,7 @@ def object_based_cluster_images_from_cocoann(coco_annotation_file, img_dir,
                                             model_family="efficientnet",
                                             model_name="EfficientNetB0",
                                             img_normalization_weight="imagenet",
+                                            img_property_set
                                             ):
     
     img_objects = get_objects_per_img(coco_annotation_file=coco_annotation_file,
@@ -154,5 +156,10 @@ def object_based_cluster_images_from_cocoann(coco_annotation_file, img_dir,
     cluster_df = cluster_img_features(img_feature=img_feature) 
     return cluster_df
 
+
+def cluster_objects_with_added_features(img_dir, coco_annotation_filepath):
+    img_feature= extract_object_features_per_image(coco_annotation_filepath, img_dir=img_dir)
+    cluster_df = cluster_img_features(img_feature=img_feature) 
+    return cluster_df
 
 
