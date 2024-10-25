@@ -229,34 +229,34 @@ def get_imgs_and_extract_features(img_path, img_resize_width,
                                 model_family, model_name,
                                 img_normalization_weight,
                                 seed, return_img_path=False,
-                                use_objects_in_image_as_features=False,
+                                #use_objects_in_image_as_features=False,
                                 objects_insitu=False,
                                 coco_annotation_filepath=None#images_list, features_list, 
                                 #model_artefacts_dict, #lock
                                 ):
-    if not use_objects_in_image_as_features:
-        feat_extract = FeatureExtractor(seed=seed, img_resize_width=img_resize_width,
-                                        img_resize_height=img_resize_height, 
-                                        model_family=model_family,
-                                        model_name=model_name,
-                                        img_normalization_weight=img_normalization_weight
-                                        )
-        feat_extract.set_seed_consistently()
-        model, preprocess = feat_extract.load_model_and_preprocess_func()
-        feature_extractor = feat_extract.get_feature_extractor(model)
-        img = feat_extract.load_and_resize_image(img_path, img_resize_width, img_resize_height)
-        img_for_infer = feat_extract.load_image_for_inference(img_path, feat_extract.image_shape)
-        feature = feat_extract.extract_features(img_for_infer, feature_extractor, preprocess)
-        if return_img_path:
-            return img, feature, img_path
-        else:
-            return img, feature
+    #if not use_objects_in_image_as_features:
+    feat_extract = FeatureExtractor(seed=seed, img_resize_width=img_resize_width,
+                                    img_resize_height=img_resize_height, 
+                                    model_family=model_family,
+                                    model_name=model_name,
+                                    img_normalization_weight=img_normalization_weight
+                                    )
+    feat_extract.set_seed_consistently()
+    model, preprocess = feat_extract.load_model_and_preprocess_func()
+    feature_extractor = feat_extract.get_feature_extractor(model)
+    img = feat_extract.load_and_resize_image(img_path, img_resize_width, img_resize_height)
+    img_for_infer = feat_extract.load_image_for_inference(img_path, feat_extract.image_shape)
+    feature = feat_extract.extract_features(img_for_infer, feature_extractor, preprocess)
+    if return_img_path:
+        return img, feature, img_path
     else:
-        if not objects_insitu:
-            imgname_list, obj_featlist = extract_object_features_per_image(img_paths=img_path, 
-                                              coco_annotation_filepath=coco_annotation_filepath
-                                              )
-        else:
+        return img, feature
+    # else:
+    #     if not objects_insitu:
+    #         imgname_list, obj_featlist = extract_object_features_per_image(img_paths=img_path, 
+    #                                           coco_annotation_filepath=coco_annotation_filepath
+    #                                           )
+    #     else:
             
             
 
@@ -264,7 +264,9 @@ def get_imgs_and_extract_features_wrapper(args):
     img, feature, img_path = get_imgs_and_extract_features(**args)
     return img, feature, img_path
      
-def extract_object_features_per_image(coco_annotation_filepath, img_dir):#->Tuple[List, List]:
+def extract_object_features_per_image(coco_annotation_filepath, img_dir,
+                                      img_property_set: ImgPropertySetReturnType
+                                      ):#->Tuple[List, List]:
     coco = COCO(coco_annotation_filepath)
     img_names = [obj["file_name"] for obj in coco.imgs.values()]
     #obj_featlist = []
@@ -282,8 +284,9 @@ def extract_object_features_per_image(coco_annotation_filepath, img_dir):#->Tupl
         #obj_featlist.append(features)
         #imgname_list.append(imgname)
         img_feature[imgname] = features
-    return img_feature #imgname_list, obj_featlist
-
+    img_property_set.img_names = [img_name for img_name in img_feature.keys()]
+    img_property_set.features = [feat for feat in img_feature.values()]
+    return img_property_set
 
 
 def get_imgs_and_extract_features_multiprocess(img_path, img_resize_width,
@@ -315,84 +318,83 @@ def get_imgs_and_extract_features_multiprocess(img_path, img_resize_width,
 
 #%%
 def img_feature_extraction_implementor(img_property_set,
-                                       feature_extractor_class = None,
+                                       #feature_extractor_class = None,
                                        seed=2024, img_resize_width=224,
                                        img_resize_height=224,
                                        model_family="efficientnet",
                                        model_name="EfficientNetB0",
                                        img_normalization_weight="imagenet",
-                                       use_cropped_imgs=True,
-                                       multiprocess = False
+                                       #multiprocess = False
                                        ):
     
     img_paths = sorted(img_property_set.img_paths)
-    if multiprocess:
-        manager = multiprocessing.Manager()
-        images_list = manager.list()
-        features_list = manager.list()
-        image_shape=(img_resize_height, img_resize_width, 3)
-        args_for_multiprocess = [(img_path, img_resize_width, img_resize_height,
-                                model_family, model_name, 
-                                img_normalization_weight, seed, images_list,
-                                features_list,
-                                )
-                                for img_path in img_paths
-                                ]
-        num_processes = multiprocessing.cpu_count()
+    # if multiprocess:
+    #     manager = multiprocessing.Manager()
+    #     images_list = manager.list()
+    #     features_list = manager.list()
+    #     image_shape=(img_resize_height, img_resize_width, 3)
+    #     args_for_multiprocess = [(img_path, img_resize_width, img_resize_height,
+    #                             model_family, model_name, 
+    #                             img_normalization_weight, seed, images_list,
+    #                             features_list,
+    #                             )
+    #                             for img_path in img_paths
+    #                             ]
+    #     num_processes = multiprocessing.cpu_count()
         
-        with multiprocessing.Pool(num_processes) as pool:
-            print("waiting for multiprocess to finish")
-            results = pool.starmap(get_imgs_and_extract_features_multiprocess, args_for_multiprocess)
-        print(f"results: {len(list(results))}")
-        images_list_re, features_list_re = results
+    #     with multiprocessing.Pool(num_processes) as pool:
+    #         print("waiting for multiprocess to finish")
+    #         results = pool.starmap(get_imgs_and_extract_features_multiprocess, args_for_multiprocess)
+    #     print(f"results: {len(list(results))}")
+    #     images_list_re, features_list_re = results
         
-        img_property_set.imgs = list(images_list_re)
-        img_property_set.features = list(features_list_re)
+    #     img_property_set.imgs = list(images_list_re)
+    #     img_property_set.features = list(features_list_re)
         
-        print(f"num of images: {len(img_property_set.imgs)}")
-        print(f"num of features: {len(img_property_set.features)}")
+    #     print(f"num of images: {len(img_property_set.imgs)}")
+    #     print(f"num of features: {len(img_property_set.features)}")
         
-        return img_property_set
-    else:
-        img_list, feature_list = [], []
-        for img_path in img_paths:
-            img, feature = get_imgs_and_extract_features(img_path=img_path, 
-                                                         img_resize_height=img_resize_height,
-                                                        img_resize_width=img_resize_width,
-                                                        model_family=model_family, 
-                                                        model_name=model_name,
-                                                        img_normalization_weight=img_normalization_weight,
-                                                        seed=seed
-                                                        )
-            img_list.append(img)
-            feature_list.append(feature)
-        img_property_set.imgs = img_list
-        img_property_set.features = feature_list
-        return img_property_set
-        
-        
-        
-        args = [{"img_path": img_path, "img_resize_width": img_resize_width,
-                 "img_resize_height": img_resize_height, "model_family": model_family,
-                 "model_name":model_name, 
-                 "img_normalization_weight": img_normalization_weight,
-                 "seed": seed, "return_img_path": True
-                 } for img_path in img_paths
-                ]
-        chunksize = max(1, len(args) // 10)
-        num_processes = multiprocessing.cpu_count()
-        from tqdm import tqdm
-        with multiprocessing.Pool(num_processes) as p:
-            results = list(
-                tqdm(
-                    p.imap_unordered(
-                        get_imgs_and_extract_features_wrapper, args, chunksize=chunksize
-                    ),
-                    total=len(img_paths),
-                )
-            )
-
+    #     return img_property_set
+    # else:
+    img_list, feature_list = [], []
+    for img_path in img_paths:
+        img, feature = get_imgs_and_extract_features(img_path=img_path, 
+                                                        img_resize_height=img_resize_height,
+                                                    img_resize_width=img_resize_width,
+                                                    model_family=model_family, 
+                                                    model_name=model_name,
+                                                    img_normalization_weight=img_normalization_weight,
+                                                    seed=seed
+                                                    )
+        img_list.append(img)
+        feature_list.append(feature)
+    img_property_set.imgs = img_list
+    img_property_set.features = feature_list
     return img_property_set
+        
+        
+        
+    #     args = [{"img_path": img_path, "img_resize_width": img_resize_width,
+    #              "img_resize_height": img_resize_height, "model_family": model_family,
+    #              "model_name":model_name, 
+    #              "img_normalization_weight": img_normalization_weight,
+    #              "seed": seed, "return_img_path": True
+    #              } for img_path in img_paths
+    #             ]
+    #     chunksize = max(1, len(args) // 10)
+    #     num_processes = multiprocessing.cpu_count()
+    #     from tqdm import tqdm
+    #     with multiprocessing.Pool(num_processes) as p:
+    #         results = list(
+    #             tqdm(
+    #                 p.imap_unordered(
+    #                     get_imgs_and_extract_features_wrapper, args, chunksize=chunksize
+    #                 ),
+    #                 total=len(img_paths),
+    #             )
+    #         )
+
+    # return img_property_set
 
 
 #%%       
@@ -406,7 +408,8 @@ def run_multiprocess(img_property_set,
                     ):
     img_paths = sorted(img_property_set.img_paths)
     args = [{"img_path": img_path, "img_resize_width": img_resize_width,
-                 "img_resize_height": img_resize_height, "model_family": model_family,
+                 "img_resize_height": img_resize_height, 
+                 "model_family": model_family,
                  "model_name":model_name, 
                  "img_normalization_weight": img_normalization_weight,
                  "seed": seed, "return_img_path": True
@@ -427,20 +430,26 @@ def run_multiprocess(img_property_set,
     print("multiprocess of imaged feature extration completed")
     images_read = []
     features = []
-    image_names = []
+    img_names = []
+    img_paths = []
     print(f"started clustering")
     for res in results:
         images_read.append(res[0])
         features.append(res[1])
-        image_names.append(os.path.basename(res[2]))
-    featarray = np.array(features)
-    ce = clusteval()
-    cluster_results = ce.fit(featarray)
-    clusters = cluster_results["labx"]
-    imgcluster_dict = {"image_names":image_names, "clusters": clusters}
-    imgclust_df = pd.DataFrame.from_dict(imgcluster_dict)
-    print("completed clustering")
-    return imgclust_df
+        img_names.append(os.path.basename(res[2]))
+        img_paths.append(res[2])
+    img_property_set.img_names = img_names
+    img_property_set.img_paths = img_paths
+    img_property_set.features = features
+    return img_property_set
+    # featarray = np.array(features)
+    # ce = clusteval()
+    # cluster_results = ce.fit(featarray)
+    # clusters = cluster_results["labx"]
+    # imgcluster_dict = {"image_names":image_names, "clusters": clusters}
+    # imgclust_df = pd.DataFrame.from_dict(imgcluster_dict)
+    # print("completed clustering")
+    # return imgclust_df
 
     
 #%%
