@@ -9,10 +9,11 @@ from PIL import Image
 from clusteval import clusteval
 import pandas as pd
 import json
-from feat import get_object_features
+from feat import get_object_features, extract_object_features_per_image_wrapper
 from feat import extract_object_features_per_image, img_feature_extraction_implementor
 from feat import ImgPropertySetReturnType, run_multiprocess
 import multiprocessing
+from copy import deepcopy
 
 def get_objects(imgname, coco, img_dir):
     try:
@@ -193,7 +194,6 @@ def get_clusters_with_full_image_multiprocess(img_property_set, **kwargs):
     cluster_df = cluster_img_features(img_property_set=img_property_set) 
     return cluster_df
 
-
 def object_based_cluster_images_from_cocoann_multiprocess(coco_annotation_file, img_dir,
                                                           img_property_set,
                                                           seed=2024, img_resize_width=224,
@@ -255,8 +255,37 @@ def object_based_cluster_images_from_cocoann_multiprocess(coco_annotation_file, 
     cluster_df = cluster_img_features(img_property_set=img_property_set) 
     return cluster_df
     
-def cluster_objects_with_added_features_wrapper():
-    pass
+def cluster_objects_with_added_features_multiprocess(img_dir, coco_annotation_filepath,
+                                                    img_property_set
+                                                    ):
+    coco = COCO(coco_annotation_filepath)
+    img_names = [obj["file_name"] for obj in coco.imgs.values()]
+    #get_objects_per_img(coco_annotation_file, img_dir, coco=None, img_names=None)
+    args_objects = [{"coco_annotation_filepath": coco_annotation_filepath,
+                     "coco": deepcopy(coco),
+                    "img_dir": img_dir,
+                    "img_property_set": img_property_set,
+                    "img_names": img_name
+                    } for img_name in img_names
+                    ]
+    img_names, features = [], []
+    img_property_set_results = parallelize_func(args=args_objects, 
+                                                func=extract_object_features_per_image_wrapper
+                                                )
+    print(f"Completed multiprocessing of extract_object_features_per_image")
+    for res in img_property_set_results:
+        img_names.extend(res.img_names)
+        features.extend(res.features)
+    img_property_set.img_names = img_names
+    img_property_set.features = features
+    
+    print("Started clustering")
+    cluster_df = cluster_img_features(img_property_set=img_property_set) 
+    return cluster_df
+    
+    
+    
+    
 
 def parallelize_func(args, func):
     chunksize = max(1, len(args) // 10)

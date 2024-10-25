@@ -265,10 +265,15 @@ def get_imgs_and_extract_features_wrapper(args):
     return img, feature, img_path
      
 def extract_object_features_per_image(coco_annotation_filepath, img_dir,
-                                      img_property_set: ImgPropertySetReturnType
+                                      img_property_set: ImgPropertySetReturnType,
+                                      coco=None, img_names=None
                                       ):#->Tuple[List, List]:
-    coco = COCO(coco_annotation_filepath)
-    img_names = [obj["file_name"] for obj in coco.imgs.values()]
+    if not coco:
+        coco = COCO(coco_annotation_filepath)
+    if not img_names:
+        img_names = [obj["file_name"] for obj in coco.imgs.values()]
+    if not isinstance(img_names, list):
+        img_names = [img_names]
     #obj_featlist = []
     #imgname_list = []
     img_feature = {}
@@ -286,6 +291,10 @@ def extract_object_features_per_image(coco_annotation_filepath, img_dir,
         img_feature[imgname] = features
     img_property_set.img_names = [img_name for img_name in img_feature.keys()]
     img_property_set.features = [feat for feat in img_feature.values()]
+    return img_property_set
+
+def extract_object_features_per_image_wrapper(args):
+    img_property_set = extract_object_features_per_image(**args)
     return img_property_set
 
 
