@@ -405,8 +405,7 @@ def img_feature_extraction_implementor(img_property_set,
 
     # return img_property_set
 
-
-#%%       
+      
 def run_multiprocess(img_property_set,
                     feature_extractor_class = None,
                     seed=2024, img_resize_width=224,
@@ -553,8 +552,4 @@ if __name__ == '__main__':
         read_img_list.append(read_img)
         feat_list.append(feat_ext)
 
-
-    #%%
-    
-# %%
 
