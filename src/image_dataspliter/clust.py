@@ -189,7 +189,7 @@ def cluster_with_full_image(img_property_set):
     cluster_df = cluster_img_features(img_property_set=img_property_set) 
     return cluster_df
 
-def get_clusters_with_full_image_multiprocess(img_property_set, **kwargs):
+def clusters_with_full_image_multiprocess(img_property_set, **kwargs):
     img_property_set = run_multiprocess(img_property_set)
     cluster_df = cluster_img_features(img_property_set=img_property_set) 
     return cluster_df
