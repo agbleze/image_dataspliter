@@ -9,9 +9,9 @@ from PIL import Image
 from clusteval import clusteval
 import pandas as pd
 import json
-from feat import get_object_features, extract_object_features_per_image_wrapper
-from feat import extract_object_features_per_image, img_feature_extraction_implementor
-from feat import ImgPropertySetReturnType, run_multiprocess
+from .feat import get_object_features, extract_object_features_per_image_wrapper
+from .feat import extract_object_features_per_image, img_feature_extraction_implementor
+from .feat import ImgPropertySetReturnType, run_multiprocess
 import multiprocessing
 from copy import deepcopy
 

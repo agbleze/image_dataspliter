@@ -8,6 +8,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+pandas = "^2.2.3"
+tensorflow = "^2.18.0"
+torch = "^2.5.0"
+clusteval = "^2.2.2"
 
 [tool.poetry.dev-dependencies]
 

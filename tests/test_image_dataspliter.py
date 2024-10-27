@@ -6,7 +6,10 @@ from image_dataspliter.generate_coco_ann import generate_random_images_and_annot
 from image_dataspliter.feat import ImgPropertySetReturnType
 from image_dataspliter.clust import (object_based_cluster_images_from_cocoann,
                                     cluster_objects_with_added_features,
-                                    cluster_with_full_image
+                                    cluster_with_full_image,
+                                    clusters_with_full_image_multiprocess,
+                                    object_based_cluster_images_from_cocoann_multiprocess,
+                                    cluster_objects_with_added_features_multiprocess
                                     )
 
 
@@ -34,7 +37,46 @@ def check_cluster_df(cluster_df):
     assert isinstance(cluster_df, pd.DataFrame), f"cluster results is {type(cluster_df)} but pd.DataFrame is expected"
     for col in ["image_names", "clusters"]:
         assert col in cluster_df.columns, f"Column name {col} not found in cluster results"
-    
+
+def test_clusters_with_full_image_multiprocess(generate_crop_imgs_and_annotation, img_property_set):
+    img_paths, coco_path, tempdir = generate_crop_imgs_and_annotation
+    img_property_set = img_property_set
+    img_names = [os.path.basename(img_path) for img_path in img_paths]
+    total_num_imgs = len(img_paths)
+    img_property_set.img_names = img_names
+    img_property_set.img_paths = img_paths
+    img_property_set.total_num_imgs = total_num_imgs
+    cluster_df = clusters_with_full_image_multiprocess(img_property_set=img_property_set)
+    check_cluster_df(cluster_df)
+    tempdir.cleanup()
+    if os.path.exists(coco_path):
+        os.remove(coco_path)
+        
+def test_object_based_cluster_images_from_cocoann_multiprocess(generate_crop_imgs_and_annotation, 
+                                                               img_property_set
+                                                               ):
+    img_paths, coco_path, tempdir = generate_crop_imgs_and_annotation
+    img_property_set = img_property_set
+    cluster_df = object_based_cluster_images_from_cocoann_multiprocess(coco_annotation_file=coco_path,
+                                                                        img_dir=tempdir.name,
+                                                                        img_property_set=img_property_set
+                                                                        )
+    check_cluster_df(cluster_df)
+    tempdir.cleanup()
+    if os.path.exists(coco_path):
+        os.remove(coco_path)
+        
+def test_cluster_objects_with_added_features_multiprocess(generate_crop_imgs_and_annotation, img_property_set):
+    img_paths, coco_path, tempdir = generate_crop_imgs_and_annotation
+    img_property_set = img_property_set
+    cluster_df = cluster_objects_with_added_features_multiprocess(coco_annotation_filepath=coco_path,
+                                                                img_dir=tempdir.name,
+                                                                )
+    check_cluster_df(cluster_df)
+    tempdir.cleanup()
+    if os.path.exists(coco_path):
+        os.remove(coco_path)
+   
 def test_object_based_cluster_images_from_cocoann(generate_crop_imgs_and_annotation, img_property_set):
     img_paths, coco_path, tempdir = generate_crop_imgs_and_annotation
     img_property_set = img_property_set
@@ -73,3 +115,9 @@ def test_cluster_with_full_image(generate_crop_imgs_and_annotation, img_property
     tempdir.cleanup()
     if os.path.exists(coco_path):
         os.remove(coco_path)
+        
+
+
+
+
+      

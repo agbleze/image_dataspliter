@@ -12,7 +12,6 @@ from typing import List
 from glob import glob
 import os
 from multiprocessing import Process, Lock
-from tensorflow.keras.layers import Add
 import cv2
 from pycocotools.coco import COCO
 from tensorflow.keras.layers import Add
@@ -56,7 +55,9 @@ class FeatureExtractor(object):
         self.model_name=model_name
         self.image_shape=(img_resize_height, img_resize_width, 3)
         self.img_normalization_weight=img_normalization_weight
-        
+    import numpy as np
+    import tensorflow as tf    
+    import random
     def set_seed_consistently(self, seed=2024):
         if seed:
             self.seed=seed
@@ -197,6 +198,8 @@ def get_object_features(obj_imgs,
                         seed, #images_list, features_list, 
                         #model_artefacts_dict, #lock
                         ):
+    from tensorflow.keras.layers import Add
+    import tensorflow as tf
     feat_extract = FeatureExtractor(seed=seed, img_resize_width=img_resize_width,
                                     img_resize_height=img_resize_height, 
                                     model_family=model_family,
@@ -251,14 +254,6 @@ def get_imgs_and_extract_features(img_path, img_resize_width,
         return img, feature, img_path
     else:
         return img, feature
-    # else:
-    #     if not objects_insitu:
-    #         imgname_list, obj_featlist = extract_object_features_per_image(img_paths=img_path, 
-    #                                           coco_annotation_filepath=coco_annotation_filepath
-    #                                           )
-    #     else:
-            
-            
 
 def get_imgs_and_extract_features_wrapper(args):
     img, feature, img_path = get_imgs_and_extract_features(**args)
@@ -337,34 +332,6 @@ def img_feature_extraction_implementor(img_property_set,
                                        ):
     
     img_paths = sorted(img_property_set.img_paths)
-    # if multiprocess:
-    #     manager = multiprocessing.Manager()
-    #     images_list = manager.list()
-    #     features_list = manager.list()
-    #     image_shape=(img_resize_height, img_resize_width, 3)
-    #     args_for_multiprocess = [(img_path, img_resize_width, img_resize_height,
-    #                             model_family, model_name, 
-    #                             img_normalization_weight, seed, images_list,
-    #                             features_list,
-    #                             )
-    #                             for img_path in img_paths
-    #                             ]
-    #     num_processes = multiprocessing.cpu_count()
-        
-    #     with multiprocessing.Pool(num_processes) as pool:
-    #         print("waiting for multiprocess to finish")
-    #         results = pool.starmap(get_imgs_and_extract_features_multiprocess, args_for_multiprocess)
-    #     print(f"results: {len(list(results))}")
-    #     images_list_re, features_list_re = results
-        
-    #     img_property_set.imgs = list(images_list_re)
-    #     img_property_set.features = list(features_list_re)
-        
-    #     print(f"num of images: {len(img_property_set.imgs)}")
-    #     print(f"num of features: {len(img_property_set.features)}")
-        
-    #     return img_property_set
-    # else:
     img_list, feature_list = [], []
     for img_path in img_paths:
         img, feature = get_imgs_and_extract_features(img_path=img_path, 
@@ -381,31 +348,6 @@ def img_feature_extraction_implementor(img_property_set,
     img_property_set.features = feature_list
     return img_property_set
         
-        
-        
-    #     args = [{"img_path": img_path, "img_resize_width": img_resize_width,
-    #              "img_resize_height": img_resize_height, "model_family": model_family,
-    #              "model_name":model_name, 
-    #              "img_normalization_weight": img_normalization_weight,
-    #              "seed": seed, "return_img_path": True
-    #              } for img_path in img_paths
-    #             ]
-    #     chunksize = max(1, len(args) // 10)
-    #     num_processes = multiprocessing.cpu_count()
-    #     from tqdm import tqdm
-    #     with multiprocessing.Pool(num_processes) as p:
-    #         results = list(
-    #             tqdm(
-    #                 p.imap_unordered(
-    #                     get_imgs_and_extract_features_wrapper, args, chunksize=chunksize
-    #                 ),
-    #                 total=len(img_paths),
-    #             )
-    #         )
-
-    # return img_property_set
-
-      
 def run_multiprocess(img_property_set,
                     feature_extractor_class = None,
                     seed=2024, img_resize_width=224,
