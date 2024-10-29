@@ -64,17 +64,24 @@ def split_data(*args, **kwargs):
     # useparams = {param: kwargs[param] for param in allowed_cluster_with_full_image_param}
     params_to_use = get_params(cluster_func, kwargs=kwargs)
     cluster_df = cluster_func(**params_to_use)
-    train_df, test_df = train_test_split(cluster_df, train_size=0.9,
+    include_testsplit = kwargs.get('include_testsplit', True)
+    train_size = kwargs.get('train_size', 0.9)
+    train_df, test_df = train_test_split(cluster_df, train_size=train_size,
                                         stratify=cluster_df.clusters,
                                         random_state=2024
                                         )
-    train_df, val_df = train_test_split(train_df, train_size=0.8,
-                                        stratify=train_df.clusters,
-                                        random_state=2024
-                                        )
-    results = {"train_set": train_df.image_names,
-                "val_set": val_df.image_names,
-                "test_set": test_df.image_names
+    if not include_testsplit:
+        results = {"train_set": train_df.image_names,
+                "val_set": test_df.image_names
                 }
+    elif include_testsplit:
+        train_df, val_df = train_test_split(train_df, train_size=train_size,
+                                            stratify=train_df.clusters,
+                                            random_state=2024
+                                            )
+        results = {"train_set": train_df.image_names,
+                    "val_set": val_df.image_names,
+                    "test_set": test_df.image_names
+                    }
     return results
     

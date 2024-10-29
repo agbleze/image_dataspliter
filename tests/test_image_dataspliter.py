@@ -38,6 +38,30 @@ def check_cluster_df(cluster_df):
     for col in ["image_names", "clusters"]:
         assert col in cluster_df.columns, f"Column name {col} not found in cluster results"
 
+def test_split_data(generate_crop_imgs_and_annotation, img_property_set,
+                    use_object_features=False, 
+                    parallelize=False, 
+                    insitu=False,
+                    include_testsplit=True
+                    ):
+    img_paths, coco_path, tempdir = generate_crop_imgs_and_annotation
+    img_property_set = img_property_set
+    img_names = [os.path.basename(img_path) for img_path in img_paths]
+    total_num_imgs = len(img_paths)
+    img_property_set.img_names = img_names
+    img_property_set.img_paths = img_paths
+    img_property_set.total_num_imgs = total_num_imgs
+    results = split_data(img_property_set=img_property_set,
+                         use_object_features=use_object_features, 
+                        parallelize=parallelize, 
+                        insitu=insitu, 
+                        include_testsplit=include_testsplit
+                        )
+    assert isinstance(results, dict), f"split_data result is not a dict"
+    for datasplit in ["train_set", "val_set", "test_set"]:
+        assert datasplit in results, f"{datasplit} not found in split_data results"
+        assert results[datasplit] is not None, f"{datasplit} is empty in split_data results"
+
 
 def test_object_based_cluster_images_from_cocoann(generate_crop_imgs_and_annotation, img_property_set):
     img_paths, coco_path, tempdir = generate_crop_imgs_and_annotation
@@ -79,10 +103,6 @@ def test_cluster_with_full_image(generate_crop_imgs_and_annotation, img_property
         os.remove(coco_path)
         
         
-def test_split_data():
-    split_data()
-
-
 def test_clusters_with_full_image_multiprocess(generate_crop_imgs_and_annotation, img_property_set):
     img_paths, coco_path, tempdir = generate_crop_imgs_and_annotation
     img_property_set = img_property_set
