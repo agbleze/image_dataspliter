@@ -2,6 +2,7 @@
 from image_dataspliter.feat import ImgPropertySetReturnType
 import inspect
 from sklearn.model_selection import train_test_split
+import numpy as np
 from image_dataspliter.clust import (object_based_cluster_images_from_cocoann,
                                     cluster_objects_with_added_features,
                                     cluster_with_full_image,
@@ -48,17 +49,36 @@ def split_data(*args, **kwargs):
                                         random_state=2024
                                         )
     if not include_testsplit:
-        results = {"train_set": train_df.image_names,
-                "val_set": test_df.image_names
-                }
+        results = {"train_set": train_df.image_names.values.tolist(),
+                    "val_set": test_df.image_names.values.tolist()
+                    }
+        cluster_df["split_type"] = np.where(cluster_df.image_names.isin(train_df.image_names.values.tolist()), 
+                                            "train", "nosplit"
+                                            )
+        cluster_df["split_type"] = np.where(cluster_df.image_names.isin(test_df.image_names.values.tolist()), 
+                                            "val", cluster_df.split_type
+                                            )
+        cluster_df.to_csv("data_split.csv")
     elif include_testsplit:
         train_df, val_df = train_test_split(train_df, train_size=train_size,
                                             stratify=train_df.clusters,
                                             random_state=2024
                                             )
-        results = {"train_set": train_df.image_names,
-                    "val_set": val_df.image_names,
-                    "test_set": test_df.image_names
+        cluster_df["split_type"] = np.where(cluster_df.image_names.isin(train_df.image_names.values.tolist()), 
+                                            "train", "nosplit"
+                                            )
+        cluster_df["split_type"] = np.where(cluster_df.image_names.isin(test_df.image_names.values.tolist()), 
+                                            "test", cluster_df.split_type
+                                            )
+        cluster_df["split_type"] = np.where(cluster_df.image_names.isin(val_df.image_names.values.tolist()), 
+                                            "val", cluster_df.split_type
+                                            )
+        cluster_df.to_csv("data_split.csv")
+        
+        results = {"train_set": train_df.image_names.values.tolist(),
+                    "val_set": val_df.image_names.values.tolist(),
+                    "test_set": test_df.image_names.values.tolist()
                     }
+        
     return results
     
