@@ -166,7 +166,7 @@ class FeatureExtractor(object):
         img_property_set.features = features
         
         
-def get_objects(imgname, coco, img_dir):
+def get_objects(imgname, coco, img_dir, save_crop_objs_dir="crop_objs"):
     val = [obj for obj in coco.imgs.values() if obj["file_name"] == imgname][0]
     img_id = val['id']
     img_info = coco.loadImgs(img_id)[0]
@@ -176,17 +176,30 @@ def get_objects(imgname, coco, img_dir):
     # Get annotation IDs for the image
     ann_ids = coco.getAnnIds(imgIds=img_id)
     anns = coco.loadAnns(ann_ids)
+    print(f"img_path: {img_path}")
+    print(f"len anns: {len(anns)}")
     img_obj = []
-    for ann in anns:
-        segmentation = ann['segmentation']
-        mask = coco.annToMask(ann)
+    if len(anns) == 0:
+        # create an empyt image
+        no_obj_img = np.zeros_like(image)
+        img_obj.append(no_obj_img)
+        print(f"created empty image for {img_path} without objects in it")
+    else:
+        for ann in anns:
+            segmentation = ann['segmentation']
+            mask = coco.annToMask(ann)
 
-        # Find contours
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for contour in contours:
-            x, y, w, h = cv2.boundingRect(contour)
-            cropped_object = image[y:y+h, x:x+w]
-            img_obj.append(cropped_object)
+            # Find contours
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            for contour in contours:
+                x, y, w, h = cv2.boundingRect(contour)
+                cropped_object = image[y:y+h, x:x+w]
+                img_obj.append(cropped_object)
+    os.makedirs(name=save_crop_objs_dir, exist_ok=True)
+    for img_count, each_img_obj in enumerate(img_obj):
+        imgname = os.path.splitext(imgname)[0]
+        cv2.imwrite(filename=f"{save_crop_objs_dir}/{imgname}_{img_count}.png", img=each_img_obj)
+    
     return img_obj
 
 
@@ -195,8 +208,7 @@ def get_object_features(obj_imgs,
                         img_resize_height,
                         model_family, model_name,
                         img_normalization_weight,
-                        seed, #images_list, features_list, 
-                        #model_artefacts_dict, #lock
+                        seed,
                         ):
     from tensorflow.keras.layers import Add
     import tensorflow as tf
@@ -259,7 +271,7 @@ def get_imgs_and_extract_features_wrapper(args):
     img, feature, img_path = get_imgs_and_extract_features(**args)
     return img, feature, img_path
      
-def extract_object_features_per_image(coco_annotation_filepath, img_dir,
+def get_obj_features_per_img_non_insitu(coco_annotation_filepath, img_dir,
                                       img_property_set: ImgPropertySetReturnType,
                                       coco=None, img_names=None
                                       ):#->Tuple[List, List]:
@@ -275,6 +287,8 @@ def extract_object_features_per_image(coco_annotation_filepath, img_dir,
     for img in img_names:
         imgname = os.path.basename(img)
         objects = get_objects(imgname=imgname, coco=coco, img_dir=img_dir)
+        print(f"img name: {imgname}")
+        print(f"len objects: {len(objects)}")
         features = get_object_features(obj_imgs=objects, seed=2024, img_resize_width=224,
                                         img_resize_height=224,
                                         model_family="efficientnet",
@@ -288,8 +302,8 @@ def extract_object_features_per_image(coco_annotation_filepath, img_dir,
     img_property_set.features = [feat for feat in img_feature.values()]
     return img_property_set
 
-def extract_object_features_per_image_wrapper(args):
-    img_property_set = extract_object_features_per_image(**args)
+def get_obj_features_per_img_non_insitu_wrapper(args):
+    img_property_set = get_obj_features_per_img_non_insitu(**args)
     return img_property_set
 
 

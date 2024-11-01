@@ -9,8 +9,8 @@ from PIL import Image
 from clusteval import clusteval
 import pandas as pd
 import json
-from .feat import get_object_features, extract_object_features_per_image_wrapper
-from .feat import extract_object_features_per_image, img_feature_extraction_implementor
+from .feat import get_object_features, get_obj_features_per_img_non_insitu_wrapper
+from .feat import get_obj_features_per_img_non_insitu, img_feature_extraction_implementor
 from .feat import ImgPropertySetReturnType, run_multiprocess
 import multiprocessing
 from copy import deepcopy
@@ -53,12 +53,13 @@ def get_objects(imgname, coco, img_dir):
     
     os.makedirs(name="crop_objs", exist_ok=True)
     for img_count, each_img_obj in enumerate(img_obj):
-        cv2.imwrite(filename=f"crop_objs/img_obj_{img_count}.png", img=each_img_obj)
+        imgname = os.path.splitext(imgname)[0]
+        cv2.imwrite(filename=f"crop_objs/{imgname}_{img_count}.png", img=each_img_obj)
     
     return img_obj
 
 
-def get_objects_keep_imgdim(imgname, coco, img_dir) -> List:
+def get_objects_keep_imgdim(imgname, coco, img_dir, save_crop_objs_dir="crop_objs") -> List:
     try:
         val = next(obj for obj in coco.imgs.values() if obj["file_name"] == imgname)
     except StopIteration:
@@ -68,10 +69,14 @@ def get_objects_keep_imgdim(imgname, coco, img_dir) -> List:
     img_info = coco.loadImgs(img_id)[0]
     img_path = os.path.join(img_dir, imgname)
     image = cv2.imread(img_path)
+    print(f"img_path: {img_path}")
+    #print(f"image: {image}")
 
     # Get annotation IDs for the image
     ann_ids = coco.getAnnIds(imgIds=img_id)
     anns = coco.loadAnns(ann_ids)
+    print(f"len of anns: {len(anns)}")
+    print(f"anns:  {anns}")
     img_obj = []
 
     for ann in anns:
@@ -86,9 +91,10 @@ def get_objects_keep_imgdim(imgname, coco, img_dir) -> List:
 
         img_obj.append(segmented_object)
     
-    os.makedirs(name="crop_objs", exist_ok=True)
+    os.makedirs(name=save_crop_objs_dir, exist_ok=True)
     for img_count, each_img_obj in enumerate(img_obj):
-        cv2.imwrite(filename=f"crop_objs/img_obj_{img_count}.png", img=each_img_obj)
+        imgname = os.path.splitext(imgname)[0]
+        cv2.imwrite(filename=f"{save_crop_objs_dir}/{imgname}_{img_count}.png", img=each_img_obj)
     
     return img_obj
 
@@ -112,7 +118,7 @@ def get_objects_per_img_wrapper(args):
     img_objects = get_objects_per_img(**args)
     return img_objects
     
-def get_obj_features_per_img(img_objects,img_resize_width,
+def get_obj_features_per_img_insitu(img_objects,img_resize_width,
                             img_resize_height,
                             model_family, model_name,
                             img_normalization_weight,
@@ -133,8 +139,8 @@ def get_obj_features_per_img(img_objects,img_resize_width,
     img_property_set.features = [feat for feat in img_feature.values()]
     return img_property_set
 
-def get_obj_features_per_img_wrapper(args):
-    img_property_set = get_obj_features_per_img(**args)
+def get_obj_features_per_img_insitu_wrapper(args):
+    img_property_set = get_obj_features_per_img_insitu(**args)
     return img_property_set
 
 def cluster_img_features(img_property_set: ImgPropertySetReturnType) -> pd.DataFrame:
@@ -149,7 +155,7 @@ def cluster_img_features(img_property_set: ImgPropertySetReturnType) -> pd.DataF
     return imgclust_df
         
 
-def object_based_cluster_images_from_cocoann(coco_annotation_file, img_dir,
+def object_based_cluster_images_insitu(coco_annotation_file, img_dir,
                                              img_property_set: ImgPropertySetReturnType,
                                              seed=2024, img_resize_width=224,
                                             img_resize_height=224,
@@ -162,7 +168,8 @@ def object_based_cluster_images_from_cocoann(coco_annotation_file, img_dir,
     img_objects = get_objects_per_img(coco_annotation_file=coco_annotation_file,
                                         img_dir=img_dir
                                         )
-    img_property_set = get_obj_features_per_img(img_objects=img_objects, 
+    print(f"number of img objects: {len(img_objects)}")
+    img_property_set = get_obj_features_per_img_insitu(img_objects=img_objects, 
                                            img_resize_width=img_resize_width,
                                             img_resize_height=img_resize_height,
                                             model_family=model_family,
@@ -175,12 +182,12 @@ def object_based_cluster_images_from_cocoann(coco_annotation_file, img_dir,
     return cluster_df
 
 
-def cluster_objects_with_added_features(img_dir, coco_annotation_filepath,
+def object_based_cluster_images_non_insitu(img_dir, coco_annotation_file,
                                         img_property_set
                                         ):
-    img_property_set= extract_object_features_per_image(coco_annotation_filepath, img_dir=img_dir,
-                                                   img_property_set=img_property_set
-                                                   )
+    img_property_set= get_obj_features_per_img_non_insitu(coco_annotation_file, img_dir=img_dir,
+                                                        img_property_set=img_property_set
+                                                        )
     cluster_df = cluster_img_features(img_property_set=img_property_set) 
     return cluster_df
 
@@ -194,7 +201,7 @@ def clusters_with_full_image_multiprocess(img_property_set, **kwargs):
     cluster_df = cluster_img_features(img_property_set=img_property_set) 
     return cluster_df
 
-def object_based_cluster_images_from_cocoann_multiprocess(coco_annotation_file, img_dir,
+def object_based_cluster_images_insitu_multiprocess(coco_annotation_file, img_dir,
                                                           img_property_set,
                                                           seed=2024, img_resize_width=224,
                                                         img_resize_height=224,
@@ -211,27 +218,8 @@ def object_based_cluster_images_from_cocoann_multiprocess(coco_annotation_file, 
                             "img_names": img_name
                             } for img_name in img_names
                             ]
-    # chunksize = max(1, len(args_objects_per_img) // 10)
-    # num_processes = multiprocessing.cpu_count()
-    # from tqdm import tqdm
-    # with multiprocessing.Pool(num_processes) as p:
-    #     objects_results = list(
-    #                 tqdm(
-    #                     p.imap_unordered(
-    #                         get_objects_per_img_wrapper, args_objects_per_img, 
-    #                         chunksize=chunksize
-    #                     ),
-    #                     total=len(args_objects_per_img),
-    #                 )
-    #             )
     objects_results = parallelize_func(args=args_objects_per_img, func=get_objects_per_img_wrapper)
     print("multiprocess of get_objects_per_img completed")
-    # img_objects = {}
-    # for res in objects_results:
-    #     for imgname, img_objs in res:
-    #         img_objects[imgname] = img_objs
-            
-    # change below to multiprocess 
     args_get_obj_features_per_img = [{"img_objects": res, "img_resize_width": img_resize_width,
                                         "img_resize_height": img_resize_height, 
                                         "model_family": model_family,
@@ -241,9 +229,9 @@ def object_based_cluster_images_from_cocoann_multiprocess(coco_annotation_file, 
                                         } for res in objects_results
                                     ]
     feat_results = parallelize_func(args=args_get_obj_features_per_img, 
-                                    func=get_obj_features_per_img_wrapper
+                                    func=get_obj_features_per_img_insitu_wrapper
                                     )
-    print("Completed multiprocesssing of get_obj_features_per_img")
+    print("Completed multiprocesssing of get_obj_features_per_img_insitu")
     img_names, features = [], []
     for res in feat_results:
         img_names.extend(res.img_names)
@@ -255,13 +243,13 @@ def object_based_cluster_images_from_cocoann_multiprocess(coco_annotation_file, 
     cluster_df = cluster_img_features(img_property_set=img_property_set) 
     return cluster_df
     
-def cluster_objects_with_added_features_multiprocess(img_dir, coco_annotation_filepath,
+def object_based_cluster_images_non_insitu_multiprocess(img_dir, coco_annotation_file,
                                                     img_property_set
                                                     ):
-    coco = COCO(coco_annotation_filepath)
+    coco = COCO(coco_annotation_file)
     img_names = [obj["file_name"] for obj in coco.imgs.values()]
     #get_objects_per_img(coco_annotation_file, img_dir, coco=None, img_names=None)
-    args_objects = [{"coco_annotation_filepath": coco_annotation_filepath,
+    args_objects = [{"coco_annotation_filepath": coco_annotation_file,
                      "coco": deepcopy(coco),
                     "img_dir": img_dir,
                     "img_property_set": img_property_set,
@@ -270,9 +258,9 @@ def cluster_objects_with_added_features_multiprocess(img_dir, coco_annotation_fi
                     ]
     img_names, features = [], []
     img_property_set_results = parallelize_func(args=args_objects, 
-                                                func=extract_object_features_per_image_wrapper
+                                                func=get_obj_features_per_img_non_insitu_wrapper
                                                 )
-    print(f"Completed multiprocessing of extract_object_features_per_image")
+    print(f"Completed multiprocessing of get_obj_features_per_img_non_insitu")
     for res in img_property_set_results:
         img_names.extend(res.img_names)
         features.extend(res.features)
@@ -282,10 +270,6 @@ def cluster_objects_with_added_features_multiprocess(img_dir, coco_annotation_fi
     print("Started clustering")
     cluster_df = cluster_img_features(img_property_set=img_property_set) 
     return cluster_df
-    
-    
-    
-    
 
 def parallelize_func(args, func):
     chunksize = max(1, len(args) // 10)
