@@ -194,7 +194,10 @@ def get_objects(imgname, coco, img_dir, save_crop_objs_dir="crop_objs"):
             for contour in contours:
                 x, y, w, h = cv2.boundingRect(contour)
                 cropped_object = image[y:y+h, x:x+w]
-                img_obj.append(cropped_object)
+                mask_cropped = mask[y:y+h, x:x+w]
+                segmented_object = cv2.bitwise_and(cropped_object, cropped_object, mask=mask_cropped)
+                
+                img_obj.append(segmented_object)
     os.makedirs(name=save_crop_objs_dir, exist_ok=True)
     for img_count, each_img_obj in enumerate(img_obj):
         imgname = os.path.splitext(imgname)[0]
