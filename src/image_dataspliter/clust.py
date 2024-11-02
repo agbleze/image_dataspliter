@@ -90,7 +90,16 @@ def get_objects_keep_imgdim(imgname, coco, img_dir, save_crop_objs_dir="crop_obj
         segmented_object[:, :, 3] = mask * 255
 
         img_obj.append(segmented_object)
-    
+    if len(img_obj) != 0:
+        default_img = np.zeros_like(img_obj[0])
+        for obj in img_obj:
+            img_obj = cv2.add(default_img, obj, default_img)
+    elif len(img_obj) == 0:
+        img_obj = np.zeros_like(image)
+        img_obj = cv2.cvtColor(img_obj, cv2.COLOR_BGR2BGRA)
+        print(f"{imgname} has no object hence an empty images is created")
+    if not isinstance(img_obj, list):
+        img_obj = [img_obj]
     os.makedirs(name=save_crop_objs_dir, exist_ok=True)
     for img_count, each_img_obj in enumerate(img_obj):
         imgname = os.path.splitext(imgname)[0]
@@ -211,7 +220,6 @@ def object_based_cluster_images_insitu_multiprocess(coco_annotation_file, img_di
                                                         ):
     coco = COCO(coco_annotation_file)
     img_names = [obj["file_name"] for obj in coco.imgs.values()]
-    #get_objects_per_img(coco_annotation_file, img_dir, coco=None, img_names=None)
     args_objects_per_img = [{"coco_annotation_file": coco_annotation_file,
                             "img_dir": img_dir, 
                             "coco": coco,
@@ -248,7 +256,6 @@ def object_based_cluster_images_non_insitu_multiprocess(img_dir, coco_annotation
                                                     ):
     coco = COCO(coco_annotation_file)
     img_names = [obj["file_name"] for obj in coco.imgs.values()]
-    #get_objects_per_img(coco_annotation_file, img_dir, coco=None, img_names=None)
     args_objects = [{"coco_annotation_filepath": coco_annotation_file,
                      "coco": deepcopy(coco),
                     "img_dir": img_dir,
