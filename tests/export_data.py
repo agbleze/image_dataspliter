@@ -15,7 +15,7 @@ def export_data(data_path, img_dir, coco_annotation_path, save_dir):
         split_imglist = data[data.split_type==split].image_names.tolist()
         split_imgpath = [img for img in imgs if os.path.basename(img) in split_imglist]
         save_img_dir = os.path.join(save_dir, "images", split)
-        save_ann_dir = os.path.join(save_dir, "annotations", split)
+        save_ann_dir = os.path.join(save_dir, "annotations")
         os.makedirs(save_img_dir, exist_ok=True)
         os.makedirs(save_ann_dir, exist_ok=True)
         

@@ -146,8 +146,23 @@ def subset_data(img_dir, img_list, save_img_dir,
 #             )
 
 
+#%%
+
+unused_img_dir = "/home/lin/codebase/experiment_for_image_dataspliter/unused_mixed_dataset"
+
+unused_imgbasename =[os.path.basename(img) for img in glob(f"{unused_img_dir}/*")]
+
+#imgdir = "/home/lin/codebase/experiment_for_image_dataspliter/mixed_dataset"
+coco_annpath = "/home/lin/codebase/experiment_for_image_dataspliter/mixed_dataset_combined_annotations.json"
+save_annotation_as = "/home/lin/codebase/experiment_for_image_dataspliter/unused_mixed_ann.json"
+unused_cocodata = subset_coco_annotations(img_list=unused_imgbasename, 
+                                            coco_annotation_file=coco_annpath,
+                                            save_annotation_as=save_annotation_as
+                                            )
 
 
+#%%
+len(unused_cocodata["images"])
 #%%
 # insitu_imgsplit = "/home/lin/codebase/image_dataspliter/tests/full_image_data_split.json"
 

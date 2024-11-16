@@ -17,6 +17,7 @@ from pycocotools.coco import COCO
 from tensorflow.keras.layers import Add
 from clusteval import clusteval
 import pandas as pd
+from tqdm import tqdm
 #%%
 #os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
@@ -286,12 +287,13 @@ def get_obj_features_per_img_non_insitu(coco_annotation_filepath, img_dir,
         img_names = [img_names]
     #obj_featlist = []
     #imgname_list = []
+    total = len(img_names)
     img_feature = {}
-    for img in img_names:
+    for idx, img in tqdm(enumerate(img_names), total=total, desc="Getting object features - non insitu"):
         imgname = os.path.basename(img)
         objects = get_objects(imgname=imgname, coco=coco, img_dir=img_dir)
-        print(f"img name: {imgname}")
-        print(f"len objects: {len(objects)}")
+        #print(f"img name: {imgname}")
+        #print(f"len objects: {len(objects)}")
         features = get_object_features(obj_imgs=objects, seed=2024, img_resize_width=224,
                                         img_resize_height=224,
                                         model_family="efficientnet",
@@ -301,6 +303,7 @@ def get_obj_features_per_img_non_insitu(coco_annotation_filepath, img_dir,
         #obj_featlist.append(features)
         #imgname_list.append(imgname)
         img_feature[imgname] = features
+        print(f"Processed {idx+1} out of {total}")
     img_property_set.img_names = [img_name for img_name in img_feature.keys()]
     img_property_set.features = [feat for feat in img_feature.values()]
     return img_property_set
@@ -349,8 +352,11 @@ def img_feature_extraction_implementor(img_property_set,
                                        ):
     
     img_paths = sorted(img_property_set.img_paths)
+    total = len(img_paths)
     img_list, feature_list = [], []
-    for img_path in img_paths:
+    for idx, img_path in tqdm(enumerate(img_paths), total=total,
+                              desc="Feature extraction with full image"
+                              ):
         img, feature = get_imgs_and_extract_features(img_path=img_path, 
                                                         img_resize_height=img_resize_height,
                                                     img_resize_width=img_resize_width,
@@ -361,6 +367,7 @@ def img_feature_extraction_implementor(img_property_set,
                                                     )
         img_list.append(img)
         feature_list.append(feature)
+        print(f"Processed {idx+1} out of {total}")
     img_property_set.imgs = img_list
     img_property_set.features = feature_list
     return img_property_set

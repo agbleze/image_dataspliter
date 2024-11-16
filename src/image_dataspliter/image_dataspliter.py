@@ -3,12 +3,12 @@ from image_dataspliter.feat import ImgPropertySetReturnType
 import inspect
 from sklearn.model_selection import train_test_split
 import numpy as np
-from image_dataspliter.clust import (object_based_cluster_images_from_cocoann,
-                                    cluster_objects_with_added_features,
+from image_dataspliter.clust import (object_based_cluster_images_insitu,
+                                    object_based_cluster_images_non_insitu,
                                     cluster_with_full_image,
                                     clusters_with_full_image_multiprocess,
-                                    object_based_cluster_images_from_cocoann_multiprocess,
-                                    cluster_objects_with_added_features_multiprocess
+                                    object_based_cluster_images_insitu_multiprocess,
+                                    object_based_cluster_images_non_insitu_multiprocess
                                     )
 
 def get_cluster_func(use_object_features, parallelize, insitu, **kwargs):
@@ -17,13 +17,13 @@ def get_cluster_func(use_object_features, parallelize, insitu, **kwargs):
     elif not use_object_features and parallelize:
         func = clusters_with_full_image_multiprocess
     elif use_object_features and insitu and not parallelize:
-        func = object_based_cluster_images_from_cocoann
+        func = object_based_cluster_images_insitu
     elif use_object_features and insitu and parallelize:
-        func = object_based_cluster_images_from_cocoann_multiprocess
+        func = object_based_cluster_images_insitu_multiprocess
     elif use_object_features and not insitu and not parallelize:
-        func = cluster_objects_with_added_features
+        func = object_based_cluster_images_non_insitu
     elif use_object_features and not insitu and parallelize:
-        func = cluster_objects_with_added_features_multiprocess
+        func = object_based_cluster_images_non_insitu_multiprocess
     return func
         
 def get_params(func, kwargs):

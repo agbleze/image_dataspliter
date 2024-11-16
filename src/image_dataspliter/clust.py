@@ -14,6 +14,7 @@ from .feat import get_obj_features_per_img_non_insitu, img_feature_extraction_im
 from .feat import ImgPropertySetReturnType, run_multiprocess
 import multiprocessing
 from copy import deepcopy
+from tqdm import tqdm
 
 def get_objects(imgname, coco, img_dir):
     try:
@@ -42,7 +43,7 @@ def get_objects(imgname, coco, img_dir):
 
             # Apply the mask to the cropped object
             mask_cropped = mask[y:y+h, x:x+w]
-            print(f"mask_cropped: {mask_cropped.shape}")
+            #print(f"mask_cropped: {mask_cropped.shape}")
             cropped_object = cv2.bitwise_and(cropped_object, cropped_object, mask=mask_cropped)
             
             # Remove the background (set to transparent)
@@ -69,14 +70,14 @@ def get_objects_keep_imgdim(imgname, coco, img_dir, save_crop_objs_dir="crop_obj
     img_info = coco.loadImgs(img_id)[0]
     img_path = os.path.join(img_dir, imgname)
     image = cv2.imread(img_path)
-    print(f"img_path: {img_path}")
+    #print(f"img_path: {img_path}")
     #print(f"image: {image}")
 
     # Get annotation IDs for the image
     ann_ids = coco.getAnnIds(imgIds=img_id)
     anns = coco.loadAnns(ann_ids)
-    print(f"len of anns: {len(anns)}")
-    print(f"anns:  {anns}")
+    #print(f"len of anns: {len(anns)}")
+    #print(f"anns:  {anns}")
     img_obj = []
 
     for ann in anns:
@@ -97,7 +98,7 @@ def get_objects_keep_imgdim(imgname, coco, img_dir, save_crop_objs_dir="crop_obj
     elif len(img_obj) == 0:
         img_obj = np.zeros_like(image)
         img_obj = cv2.cvtColor(img_obj, cv2.COLOR_BGR2BGRA)
-        print(f"{imgname} has no object hence an empty images is created")
+        #print(f"{imgname} has no object hence an empty images is created")
     if not isinstance(img_obj, list):
         img_obj = [img_obj]
     os.makedirs(name=save_crop_objs_dir, exist_ok=True)
@@ -116,11 +117,16 @@ def get_objects_per_img(coco_annotation_file, img_dir, coco=None, img_names=None
     if not isinstance(img_names, list):
         img_names = [img_names]
     img_objects = {}
-    for imgname in img_names:
+    total = len(img_names)
+    for idx, imgname in tqdm(enumerate(img_names), total=total,
+                                       desc="Getting objects kepts in positions"
+                                       
+                            ):
         img_objs = get_objects_keep_imgdim(imgname, coco, img_dir)
         if img_objs:
             img_objs = [cv2.cvtColor(obj, cv2.COLOR_RGBA2RGB) for obj in img_objs]
-            img_objects[imgname] = img_objs        
+            img_objects[imgname] = img_objs 
+            print(f"Processed {idx+1} out of {total}")       
     return img_objects
 
 def get_objects_per_img_wrapper(args):
@@ -135,7 +141,12 @@ def get_obj_features_per_img_insitu(img_objects,img_resize_width,
                             img_property_set: ImgPropertySetReturnType
                             ):
     img_feature = {}
-    for imgname, objs in img_objects.items():
+    total = len(img_objects)
+    for idx, img_object in tqdm(enumerate(img_objects.items()), total=total,
+                                 desc="Insitu: Getting object features"
+                                 ):
+        imgname, objs = img_object[0], img_object[1]
+        #for imgname, objs in img_object:
         feature = get_object_features(obj_imgs=objs, 
                                     img_resize_width=img_resize_width,
                                     img_resize_height=img_resize_height,
@@ -144,6 +155,7 @@ def get_obj_features_per_img_insitu(img_objects,img_resize_width,
                                     seed=seed,
                                     )
         img_feature[imgname] = feature
+        print(f"Processed {idx+1} out of {total}")
     img_property_set.img_names = [img_name for img_name in img_feature.keys()]
     img_property_set.features = [feat for feat in img_feature.values()]
     return img_property_set
@@ -161,6 +173,7 @@ def cluster_img_features(img_property_set: ImgPropertySetReturnType) -> pd.DataF
     clusters = results["labx"]
     imgcluster_dict = {"image_names": img_names, "clusters": clusters}
     imgclust_df = pd.DataFrame.from_dict(imgcluster_dict)
+    imgclust_df.to_csv("cluster_df.csv")
     return imgclust_df
         
 
@@ -177,7 +190,7 @@ def object_based_cluster_images_insitu(coco_annotation_file, img_dir,
     img_objects = get_objects_per_img(coco_annotation_file=coco_annotation_file,
                                         img_dir=img_dir
                                         )
-    print(f"number of img objects: {len(img_objects)}")
+    #print(f"number of img objects: {len(img_objects)}")
     img_property_set = get_obj_features_per_img_insitu(img_objects=img_objects, 
                                            img_resize_width=img_resize_width,
                                             img_resize_height=img_resize_height,
