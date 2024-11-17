@@ -164,7 +164,7 @@ def get_obj_features_per_img_insitu_wrapper(args):
     img_property_set = get_obj_features_per_img_insitu(**args)
     return img_property_set
 
-def cluster_img_features(img_property_set: ImgPropertySetReturnType) -> pd.DataFrame:
+def cluster_img_features(img_property_set: ImgPropertySetReturnType, **kwargs) -> pd.DataFrame:
     img_names = img_property_set.img_names
     img_feats = img_property_set.features
     featarray = np.array(img_feats)
