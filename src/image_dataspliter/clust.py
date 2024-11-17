@@ -15,7 +15,20 @@ from .feat import ImgPropertySetReturnType, run_multiprocess
 import multiprocessing
 from copy import deepcopy
 from tqdm import tqdm
+import inspect
 
+
+def get_params(func, kwargs):
+    allowed_param = [param for param in kwargs 
+                    if param in 
+                    inspect.signature(func).parameters
+                    ]
+    useparams = {param: kwargs[param] for param in 
+                 allowed_param
+                 }
+    return useparams
+   
+           
 def get_objects(imgname, coco, img_dir):
     try:
         val = next(obj for obj in coco.imgs.values() if obj["file_name"] == imgname)
@@ -168,7 +181,8 @@ def cluster_img_features(img_property_set: ImgPropertySetReturnType, **kwargs) -
     img_names = img_property_set.img_names
     img_feats = img_property_set.features
     featarray = np.array(img_feats)
-    ce = clusteval()
+    clust_params = get_params(func=clusteval, kwargs=kwargs)
+    ce = clusteval(**clust_params)
     results = ce.fit(featarray)
     clusters = results["labx"]
     imgcluster_dict = {"image_names": img_names, "clusters": clusters}

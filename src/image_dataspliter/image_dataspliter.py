@@ -8,7 +8,8 @@ from image_dataspliter.clust import (object_based_cluster_images_insitu,
                                     cluster_with_full_image,
                                     clusters_with_full_image_multiprocess,
                                     object_based_cluster_images_insitu_multiprocess,
-                                    object_based_cluster_images_non_insitu_multiprocess
+                                    object_based_cluster_images_non_insitu_multiprocess,
+                                    get_params
                                     )
 
 def get_cluster_func(use_object_features, parallelize, insitu, **kwargs):
@@ -26,15 +27,15 @@ def get_cluster_func(use_object_features, parallelize, insitu, **kwargs):
         func = object_based_cluster_images_non_insitu_multiprocess
     return func
         
-def get_params(func, kwargs):
-    allowed_param = [param for param in kwargs 
-                    if param in 
-                    inspect.signature(func).parameters
-                    ]
-    useparams = {param: kwargs[param] for param in 
-                 allowed_param
-                 }
-    return useparams
+# def get_params(func, kwargs):
+#     allowed_param = [param for param in kwargs 
+#                     if param in 
+#                     inspect.signature(func).parameters
+#                     ]
+#     useparams = {param: kwargs[param] for param in 
+#                  allowed_param
+#                  }
+#     return useparams
            
           
 def split_data(*args, **kwargs):
