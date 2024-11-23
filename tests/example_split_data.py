@@ -15,22 +15,22 @@ import random
 imgdir = "/home/lin/codebase/experiment_for_image_dataspliter/mini_mixed_dataset"
 coco_annpath = "/home/lin/codebase/experiment_for_image_dataspliter/mini_mixed_dataset_ann.json"
 
-# img_paths = glob(f"{imgdir}/*")
-# img_names = [os.path.basename(img_path) for img_path in img_paths]
+img_paths = glob(f"{imgdir}/*")
+img_names = [os.path.basename(img_path) for img_path in img_paths]
 
-# selected_img = random.sample(img_paths, 3000)
+#selected_img = random.sample(img_paths, 3000)
 
-# img_names = [os.path.basename(img_path) for img_path in selected_img]
+#img_names = [os.path.basename(img_path) for img_path in selected_img]
 
 
 #%%
-# total_num_imgs = len(img_names)
+total_num_imgs = len(img_names)
 
-# img_property_set = ImgPropertySetReturnType(img_names=img_names, 
-#                                             img_paths=img_paths, 
-#                                             total_num_imgs=total_num_imgs, 
-#                                             max_num_clusters=None
-#                                             )
+img_property_set = ImgPropertySetReturnType(img_names=img_names, 
+                                            img_paths=img_paths, 
+                                            total_num_imgs=total_num_imgs, 
+                                            max_num_clusters=None
+                                            )
 
 obj_img_property_set = ImgPropertySetReturnType(img_names=None, 
                                                 img_paths=None, 
@@ -154,15 +154,15 @@ unused_imgbasename =[os.path.basename(img) for img in glob(f"{unused_img_dir}/*"
 
 #imgdir = "/home/lin/codebase/experiment_for_image_dataspliter/mixed_dataset"
 coco_annpath = "/home/lin/codebase/experiment_for_image_dataspliter/mixed_dataset_combined_annotations.json"
-save_annotation_as = "/home/lin/codebase/experiment_for_image_dataspliter/unused_mixed_ann.json"
-unused_cocodata = subset_coco_annotations(img_list=unused_imgbasename, 
-                                            coco_annotation_file=coco_annpath,
-                                            save_annotation_as=save_annotation_as
-                                            )
+# save_annotation_as = "/home/lin/codebase/experiment_for_image_dataspliter/unused_mixed_ann.json"
+# unused_cocodata = subset_coco_annotations(img_list=unused_imgbasename, 
+#                                             coco_annotation_file=coco_annpath,
+#                                             save_annotation_as=save_annotation_as
+#                                             )
 
 
 #%%
-len(unused_cocodata["images"])
+#len(unused_cocodata["images"])
 #%%
 # insitu_imgsplit = "/home/lin/codebase/image_dataspliter/tests/full_image_data_split.json"
 
@@ -209,10 +209,11 @@ if __name__ == "__main__":
                                 insitu=False,
                                 include_testsplit=True,
                                 coco_annotation_file=coco_annpath,
-                                img_dir=imgdir
+                                img_dir=imgdir,
+                                min_clust=5, max_clust=5
                                 )
 
-    with open("/home/lin/codebase/image_dataspliter/tests/mixed_dataset/fullimage_data_split.json", "w") as f:
+    with open("/home/lin/codebase/image_dataspliter/tests/mixed_dataset/fixed_fullimage_data_split.json", "w") as f:
         json.dump(split_results, f)
     
     

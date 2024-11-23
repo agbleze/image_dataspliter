@@ -182,6 +182,7 @@ def cluster_img_features(img_property_set: ImgPropertySetReturnType, **kwargs) -
     img_feats = img_property_set.features
     featarray = np.array(img_feats)
     clust_params = get_params(func=clusteval, kwargs=kwargs)
+    print(clust_params)
     ce = clusteval(**clust_params)
     results = ce.fit(featarray)
     clusters = results["labx"]
@@ -192,14 +193,14 @@ def cluster_img_features(img_property_set: ImgPropertySetReturnType, **kwargs) -
         
 
 def object_based_cluster_images_insitu(coco_annotation_file, img_dir,
-                                             img_property_set: ImgPropertySetReturnType,
-                                             seed=2024, img_resize_width=224,
-                                            img_resize_height=224,
-                                            model_family="efficientnet",
-                                            model_name="EfficientNetB0",
-                                            img_normalization_weight="imagenet",
-                                            
-                                            ):
+                                        img_property_set: ImgPropertySetReturnType,
+                                        seed=2024, img_resize_width=224,
+                                        img_resize_height=224,
+                                        model_family="efficientnet",
+                                        model_name="EfficientNetB0",
+                                        img_normalization_weight="imagenet",
+                                        **kwargs
+                                        ):
     
     img_objects = get_objects_per_img(coco_annotation_file=coco_annotation_file,
                                         img_dir=img_dir
@@ -214,27 +215,27 @@ def object_based_cluster_images_insitu(coco_annotation_file, img_dir,
                                             seed=seed, 
                                             img_property_set=img_property_set
                                             )  
-    cluster_df = cluster_img_features(img_property_set=img_property_set) 
+    cluster_df = cluster_img_features(img_property_set=img_property_set, **kwargs) 
     return cluster_df
 
 
 def object_based_cluster_images_non_insitu(img_dir, coco_annotation_file,
-                                        img_property_set
-                                        ):
+                                            img_property_set, **kwargs
+                                            ):
     img_property_set= get_obj_features_per_img_non_insitu(coco_annotation_file, img_dir=img_dir,
                                                         img_property_set=img_property_set
                                                         )
-    cluster_df = cluster_img_features(img_property_set=img_property_set) 
+    cluster_df = cluster_img_features(img_property_set=img_property_set, **kwargs) 
     return cluster_df
 
-def cluster_with_full_image(img_property_set):
+def cluster_with_full_image(img_property_set, **kwargs):
     img_property_set = img_feature_extraction_implementor(img_property_set)
-    cluster_df = cluster_img_features(img_property_set=img_property_set) 
+    cluster_df = cluster_img_features(img_property_set=img_property_set, **kwargs) 
     return cluster_df
 
 def clusters_with_full_image_multiprocess(img_property_set, **kwargs):
     img_property_set = run_multiprocess(img_property_set)
-    cluster_df = cluster_img_features(img_property_set=img_property_set) 
+    cluster_df = cluster_img_features(img_property_set=img_property_set, **kwargs) 
     return cluster_df
 
 def object_based_cluster_images_insitu_multiprocess(coco_annotation_file, img_dir,
