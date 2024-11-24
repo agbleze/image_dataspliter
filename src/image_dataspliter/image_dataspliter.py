@@ -8,7 +8,8 @@ from image_dataspliter.clust import (object_based_cluster_images_insitu,
                                     cluster_with_full_image,
                                     clusters_with_full_image_multiprocess,
                                     object_based_cluster_images_insitu_multiprocess,
-                                    object_based_cluster_images_non_insitu_multiprocess
+                                    object_based_cluster_images_non_insitu_multiprocess,
+                                    get_params
                                     )
 
 def get_cluster_func(use_object_features, parallelize, insitu, **kwargs):
@@ -26,22 +27,23 @@ def get_cluster_func(use_object_features, parallelize, insitu, **kwargs):
         func = object_based_cluster_images_non_insitu_multiprocess
     return func
         
-def get_params(func, kwargs):
-    allowed_param = [param for param in kwargs 
-                    if param in 
-                    inspect.signature(func).parameters
-                    ]
-    useparams = {param: kwargs[param] for param in 
-                 allowed_param
-                 }
-    return useparams
+# def get_params(func, kwargs):
+#     allowed_param = [param for param in kwargs 
+#                     if param in 
+#                     inspect.signature(func).parameters
+#                     ]
+#     useparams = {param: kwargs[param] for param in 
+#                  allowed_param
+#                  }
+#     return useparams
            
           
 def split_data(*args, **kwargs):
     func_params = get_params(func=get_cluster_func, kwargs=kwargs)
     cluster_func = get_cluster_func(**func_params)
-    params_to_use = get_params(cluster_func, kwargs=kwargs)
-    cluster_df = cluster_func(**params_to_use)
+    print(f"cluster_func: {cluster_func}")
+    print(f"split_data kwargs: {kwargs}")
+    cluster_df = cluster_func(**kwargs)
     include_testsplit = kwargs.get('include_testsplit', True)
     train_size = kwargs.get('train_size', 0.9)
     train_df, test_df = train_test_split(cluster_df, train_size=train_size,
