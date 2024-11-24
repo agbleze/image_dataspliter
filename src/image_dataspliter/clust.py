@@ -82,15 +82,11 @@ def get_objects_keep_imgdim(imgname, coco, img_dir, save_crop_objs_dir="crop_obj
     img_id = val['id']
     img_info = coco.loadImgs(img_id)[0]
     img_path = os.path.join(img_dir, imgname)
+    print(f"img_path: {img_path}")
     image = cv2.imread(img_path)
-    #print(f"img_path: {img_path}")
-    #print(f"image: {image}")
-
     # Get annotation IDs for the image
     ann_ids = coco.getAnnIds(imgIds=img_id)
     anns = coco.loadAnns(ann_ids)
-    #print(f"len of anns: {len(anns)}")
-    #print(f"anns:  {anns}")
     img_obj = []
 
     for ann in anns:
@@ -111,14 +107,12 @@ def get_objects_keep_imgdim(imgname, coco, img_dir, save_crop_objs_dir="crop_obj
     elif len(img_obj) == 0:
         img_obj = np.zeros_like(image)
         img_obj = cv2.cvtColor(img_obj, cv2.COLOR_BGR2BGRA)
-        #print(f"{imgname} has no object hence an empty images is created")
     if not isinstance(img_obj, list):
         img_obj = [img_obj]
     os.makedirs(name=save_crop_objs_dir, exist_ok=True)
     for img_count, each_img_obj in enumerate(img_obj):
         imgname = os.path.splitext(imgname)[0]
         cv2.imwrite(filename=f"{save_crop_objs_dir}/{imgname}_{img_count}.png", img=each_img_obj)
-    
     return img_obj
 
 
@@ -178,11 +172,11 @@ def get_obj_features_per_img_insitu_wrapper(args):
     return img_property_set
 
 def cluster_img_features(img_property_set: ImgPropertySetReturnType, **kwargs) -> pd.DataFrame:
+    clust_params = get_params(func=clusteval, kwargs=kwargs)
+    print(f"IN cluster_img_features clust_params: {clust_params}")
     img_names = img_property_set.img_names
     img_feats = img_property_set.features
     featarray = np.array(img_feats)
-    clust_params = get_params(func=clusteval, kwargs=kwargs)
-    print(clust_params)
     ce = clusteval(**clust_params)
     results = ce.fit(featarray)
     clusters = results["labx"]
@@ -190,7 +184,6 @@ def cluster_img_features(img_property_set: ImgPropertySetReturnType, **kwargs) -
     imgclust_df = pd.DataFrame.from_dict(imgcluster_dict)
     imgclust_df.to_csv("cluster_df.csv")
     return imgclust_df
-        
 
 def object_based_cluster_images_insitu(coco_annotation_file, img_dir,
                                         img_property_set: ImgPropertySetReturnType,
@@ -205,7 +198,6 @@ def object_based_cluster_images_insitu(coco_annotation_file, img_dir,
     img_objects = get_objects_per_img(coco_annotation_file=coco_annotation_file,
                                         img_dir=img_dir
                                         )
-    #print(f"number of img objects: {len(img_objects)}")
     img_property_set = get_obj_features_per_img_insitu(img_objects=img_objects, 
                                            img_resize_width=img_resize_width,
                                             img_resize_height=img_resize_height,
@@ -239,13 +231,13 @@ def clusters_with_full_image_multiprocess(img_property_set, **kwargs):
     return cluster_df
 
 def object_based_cluster_images_insitu_multiprocess(coco_annotation_file, img_dir,
-                                                          img_property_set,
-                                                          seed=2024, img_resize_width=224,
-                                                        img_resize_height=224,
-                                                        model_family="efficientnet",
-                                                        model_name="EfficientNetB0",
-                                                        img_normalization_weight="imagenet"
-                                                        ):
+                                                    img_property_set,
+                                                    seed=2024, img_resize_width=224,
+                                                    img_resize_height=224,
+                                                    model_family="efficientnet",
+                                                    model_name="EfficientNetB0",
+                                                    img_normalization_weight="imagenet"
+                                                    ):
     coco = COCO(coco_annotation_file)
     img_names = [obj["file_name"] for obj in coco.imgs.values()]
     args_objects_per_img = [{"coco_annotation_file": coco_annotation_file,

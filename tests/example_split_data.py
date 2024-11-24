@@ -153,7 +153,7 @@ unused_img_dir = "/home/lin/codebase/experiment_for_image_dataspliter/unused_mix
 unused_imgbasename =[os.path.basename(img) for img in glob(f"{unused_img_dir}/*")]
 
 #imgdir = "/home/lin/codebase/experiment_for_image_dataspliter/mixed_dataset"
-coco_annpath = "/home/lin/codebase/experiment_for_image_dataspliter/mixed_dataset_combined_annotations.json"
+#coco_annpath = "/home/lin/codebase/experiment_for_image_dataspliter/mixed_dataset_combined_annotations.json"
 # save_annotation_as = "/home/lin/codebase/experiment_for_image_dataspliter/unused_mixed_ann.json"
 # unused_cocodata = subset_coco_annotations(img_list=unused_imgbasename, 
 #                                             coco_annotation_file=coco_annpath,
@@ -210,10 +210,10 @@ if __name__ == "__main__":
                                 include_testsplit=True,
                                 coco_annotation_file=coco_annpath,
                                 img_dir=imgdir,
-                                min_clust=5, max_clust=5
+                                #min_clust=3, max_clust=3
                                 )
 
-    with open("/home/lin/codebase/image_dataspliter/tests/mixed_dataset/fixed_fullimage_data_split.json", "w") as f:
+    with open("/home/lin/codebase/image_dataspliter/tests/mixed_dataset/fixed_insitu_data_split.json", "w") as f:
         json.dump(split_results, f)
     
     
@@ -223,7 +223,7 @@ if __name__ == "__main__":
 
 
 #%%
-crop_dir = "/home/lin/codebase/image_dataspliter/tests/crop_objs"
+# crop_dir = "/home/lin/codebase/image_dataspliter/tests/crop_objs"
 
-len(glob(f"{crop_dir}/*"))
+# len(glob(f"{crop_dir}/*"))
 # %%
